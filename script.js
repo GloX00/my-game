@@ -8,8 +8,13 @@ winMenu.classList.add("menu", "hidden");
 winMenu.innerHTML = `<h2>Победа! Ну ты и лох 😂</h2><button onclick="restartGame()">Играть снова</button>`;
 document.body.appendChild(winMenu);
 
+// Масштабирование под телефон
+canvas.width = window.innerWidth * 0.9;
+canvas.height = window.innerHeight * 0.7;
+
 let player, bonuses, mobs, shields, level, isGameOver, lives;
 let keys = {};
+let touchActive = false;
 let touchX = null, touchY = null; // Координаты касания
 
 const MAX_LEVEL = 10;
@@ -24,7 +29,7 @@ function startGame() {
     lives = 3;
     isGameOver = false;
 
-    player = { x: 50, y: 50, size: 20, speed: 3, shield: false };
+    player = { x: canvas.width / 2, y: canvas.height / 2, size: 30, speed: 4, shield: false };
     bonuses = [];
     mobs = [];
     shields = [];
@@ -45,7 +50,7 @@ function generateBonuses() {
         bonuses.push({
             x: Math.random() * (canvas.width - 20),
             y: Math.random() * (canvas.height - 20),
-            size: 15
+            size: 20
         });
     }
 }
@@ -56,7 +61,7 @@ function generateMobs() {
         mobs.push({
             x: Math.random() * (canvas.width - 20),
             y: Math.random() * (canvas.height - 20),
-            size: 20,
+            size: 30,
             speedX: (Math.random() - 0.5) * 3,
             speedY: (Math.random() - 0.5) * 3
         });
@@ -69,7 +74,7 @@ function generateShields() {
         shields.push({
             x: Math.random() * (canvas.width - 20),
             y: Math.random() * (canvas.height - 20),
-            size: 20
+            size: 30
         });
     }
 }
@@ -90,10 +95,7 @@ function gameLoop() {
         ctx.fillStyle = "green";
         ctx.fillRect(bonus.x, bonus.y, bonus.size, bonus.size);
 
-        if (player.x < bonus.x + bonus.size &&
-            player.x + player.size > bonus.x &&
-            player.y < bonus.y + bonus.size &&
-            player.y + player.size > bonus.y) {
+        if (isColliding(player, bonus)) {
             bonuses.splice(index, 1);
         }
     });
@@ -103,10 +105,7 @@ function gameLoop() {
         ctx.fillStyle = "blue";
         ctx.fillRect(shield.x, shield.y, shield.size, shield.size);
 
-        if (player.x < shield.x + shield.size &&
-            player.x + player.size > shield.x &&
-            player.y < shield.y + shield.size &&
-            player.y + player.size > shield.y) {
+        if (isColliding(player, shield)) {
             player.shield = true;
             shields.splice(index, 1);
         }
@@ -124,11 +123,7 @@ function gameLoop() {
         ctx.fillRect(mob.x, mob.y, mob.size, mob.size);
 
         // Проверка столкновения с мобом
-        if (player.x < mob.x + mob.size &&
-            player.x + player.size > mob.x &&
-            player.y < mob.y + mob.size &&
-            player.y + player.size > mob.y) {
-            
+        if (isColliding(player, mob)) {
             if (player.shield) {
                 player.shield = false;
             } else {
@@ -159,6 +154,16 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
+// Проверка столкновения
+function isColliding(a, b) {
+    return (
+        a.x < b.x + b.size &&
+        a.x + a.size > b.x &&
+        a.y < b.y + b.size &&
+        a.y + a.size > b.y
+    );
+}
+
 // Рисуем жизни
 function drawLives() {
     ctx.fillStyle = "black";
@@ -173,19 +178,31 @@ function drawLevel() {
     ctx.fillText("Уровень: " + level, canvas.width - 120, 20);
 }
 
-// Двигаем игрока (добавлено касание)
+// Двигаем игрока (исправлено касание!)
 function movePlayer() {
-    if (keys["ArrowUp"] || (touchY !== null && touchY < player.y)) player.y -= player.speed;
-    if (keys["ArrowDown"] || (touchY !== null && touchY > player.y)) player.y += player.speed;
-    if (keys["ArrowLeft"] || (touchX !== null && touchX < player.x)) player.x -= player.speed;
-    if (keys["ArrowRight"] || (touchX !== null && touchX > player.x)) player.x += player.speed;
+    if (keys["ArrowUp"]) player.y -= player.speed;
+    if (keys["ArrowDown"]) player.y += player.speed;
+    if (keys["ArrowLeft"]) player.x -= player.speed;
+    if (keys["ArrowRight"]) player.x += player.speed;
+
+    if (touchActive && touchX !== null && touchY !== null) {
+        let dx = touchX - (player.x + player.size / 2);
+        let dy = touchY - (player.y + player.size / 2);
+        let length = Math.sqrt(dx * dx + dy * dy);
+        
+        if (length > 10) {
+            player.x += (dx / length) * player.speed;
+            player.y += (dy / length) * player.speed;
+        }
+    }
 }
 
-// Функции касания
+// Функции касания (исправлено)
 canvas.addEventListener("touchstart", (event) => {
     const touch = event.touches[0];
     touchX = touch.clientX;
     touchY = touch.clientY;
+    touchActive = true;
 });
 
 canvas.addEventListener("touchmove", (event) => {
@@ -195,9 +212,12 @@ canvas.addEventListener("touchmove", (event) => {
 });
 
 canvas.addEventListener("touchend", () => {
-    touchX = null;
-    touchY = null;
+    touchActive = false;
 });
+
+// Функции клавиатуры
+document.addEventListener("keydown", (event) => keys[event.key] = true);
+document.addEventListener("keyup", (event) => keys[event.key] = false);
 
 function gameOver() {
     isGameOver = true;
@@ -205,13 +225,8 @@ function gameOver() {
     canvas.classList.add("hidden");
 }
 
-// Победа!
 function winGame() {
     isGameOver = true;
     winMenu.classList.remove("hidden");
     canvas.classList.add("hidden");
 }
-
-// Обработчики клавиш
-document.addEventListener("keydown", (event) => keys[event.key] = true);
-document.addEventListener("keyup", (event) => keys[event.key] = false);
