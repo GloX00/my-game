@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игра с мобами</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="menu" id="menu">
+        <h1>Добро пожаловать в игру!</h1>
+        <button onclick="startGame()">Старт</button>
+    </div>
+    <canvas id="gameCanvas" width="500" height="500" class="hidden"></canvas>
+    <div class="menu hidden" id="gameOver">
+        <h2>Вы проиграли!</h2>
+        <button onclick="restartGame()">Рестарт</button>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
