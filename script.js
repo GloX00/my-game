@@ -17,7 +17,7 @@ let keys = {};
 let touchActive = false;
 let touchX = null, touchY = null; // Координаты касания
 
-const MAX_LEVEL = 10;
+const MAX_LEVEL = 15;
 
 function startGame() {
     menu.classList.add("hidden");
@@ -25,8 +25,8 @@ function startGame() {
     gameOverMenu.classList.add("hidden");
     winMenu.classList.add("hidden");
 
-    level = 1;
-    lives = 3;
+    level = 15;
+    lives = 5;
     isGameOver = false;
 
     player = { x: canvas.width / 2, y: canvas.height / 2, size: 30, speed: 4, shield: false };
